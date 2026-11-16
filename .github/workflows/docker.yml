@@ -27,7 +27,7 @@ jobs:
           # Always rebuild so the latest model is fetched
           no-cache: true
           secrets: |
-            mlflow_username=${{ secrets.DAGSHUB_USERNAME }}
+            mlflow_username=${{ vars.DAGSHUB_USERNAME }}
             mlflow_password=${{ secrets.DAGSHUB_TOKEN }}
           tags: digits-fastapi:latest
 
