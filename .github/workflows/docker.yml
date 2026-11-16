@@ -1,0 +1,53 @@
+name: Build Docker image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Run manually (Actions tab) after training a new model, to rebuild with it
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # The Dockerfile fetches the latest registered model from DagsHub via MLflow
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          # Always rebuild so the latest model is fetched
+          no-cache: true
+          secrets: |
+            mlflow_username=${{ secrets.DAGSHUB_USERNAME }}
+            mlflow_password=${{ secrets.DAGSHUB_TOKEN }}
+          tags: digits-fastapi:latest
+
+      - name: Test the /predict endpoint
+        run: |
+          docker run -d --name api -p 8000:8000 digits-fastapi:latest
+          for i in $(seq 1 30); do
+            curl -s -o /dev/null http://localhost:8000/docs && break
+            sleep 1
+          done
+          python3 - <<'PY'
+          import json, urllib.request
+          body = json.dumps({"features": [[0.0] * 64]}).encode()
+          req = urllib.request.Request("http://localhost:8000/predict", data=body,
+                                       headers={"Content-Type": "application/json"})
+          resp = json.load(urllib.request.urlopen(req))
+          print(resp)
+          assert len(resp["predictions"]) == 1
+          PY
+
+      - name: Show container logs
+        if: always()
+        run: docker logs api || true

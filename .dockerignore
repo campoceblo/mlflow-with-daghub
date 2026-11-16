@@ -1,0 +1,9 @@
+.git
+.github
+.dvc
+data
+mlflow.db
+mlruns
+model
+*.ipynb
+__pycache__

@@ -1,0 +1,7 @@
+# Same versions as the training environment, so the model loads correctly
+mlflow==3.18.0
+scikit-learn==1.5.1
+skops==0.16.0
+numpy==1.26.4
+fastapi==0.163.1
+uvicorn==0.54.0
